@@ -1,6 +1,8 @@
 package com.example.JobMs.Job;
 
 
+import com.example.JobMs.Clients.CompanyClient;
+import com.example.JobMs.Clients.ReviewClient;
 import com.example.JobMs.Configuration.AppConfig;
 import com.example.JobMs.DTO.Company;
 import com.example.JobMs.DTO.JobDto;
@@ -22,11 +24,14 @@ public class JobServiceImp implements JobService{
 
     JobRepository jobRepository;
 
-    RestTemplate restTemplate;
+    private final CompanyClient companyClient;
 
-    public JobServiceImp(JobRepository jobRepository, RestTemplate restTemplate) {
+    private final ReviewClient reviewClient;
+
+    public JobServiceImp(JobRepository jobRepository, CompanyClient companyClient,ReviewClient reviewClient) {
         this.jobRepository = jobRepository;
-        this.restTemplate = restTemplate;
+        this.companyClient = companyClient;
+        this.reviewClient = reviewClient;
     }
 
 
@@ -43,7 +48,7 @@ public class JobServiceImp implements JobService{
     public Boolean createJob(Job job) {
         Company company;
         try {
-            company = restTemplate.getForObject("http://COMPANYMS/companies/" + job.getCompanyId(), Company.class);
+            company = companyClient.getCompany(job.getCompanyId());
             jobRepository.save(job);
             return true;
         } catch (Exception e) {
@@ -97,9 +102,9 @@ public class JobServiceImp implements JobService{
     {
         JobDto jobDto;
 
-        Company company = restTemplate.getForObject("http://COMPANYMS:8082/companies/"+job.getCompanyId(), Company.class);
+        Company company = companyClient.getCompany(job.getCompanyId());
 
-        List<Review> reviews = restTemplate.exchange("http://REVIEWMS:8083/reviews?companyId="+job.getCompanyId(), HttpMethod.GET,null,new ParameterizedTypeReference<List<Review>>(){}).getBody();
+        List<Review> reviews = reviewClient.getReviews(job.getCompanyId());
 
         if (company != null) {
             jobDto = JobMapper.getJobDto(job,company,reviews);
