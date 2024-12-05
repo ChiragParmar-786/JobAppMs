@@ -8,6 +8,7 @@ import com.example.JobMs.DTO.Company;
 import com.example.JobMs.DTO.JobDto;
 import com.example.JobMs.DTO.Review;
 import com.example.JobMs.Mapper.JobMapper;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
@@ -36,12 +37,17 @@ public class JobServiceImp implements JobService{
 
 
     @Override
+    @CircuitBreaker(name="companyBreaker", fallbackMethod = "companyFallback")
     public List<JobDto> findAll() {
 
         List<Job> jobs = jobRepository.findAll();
         List<JobDto> jobDtos = new ArrayList<>();
 
         return jobs.stream().map(this::convertJobDto).collect(Collectors.toList());
+    }
+
+    public List<Job> companyFallback(Exception e){
+        return jobRepository.findAll();
     }
 
     @Override
